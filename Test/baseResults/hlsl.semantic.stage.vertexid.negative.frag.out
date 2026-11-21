@@ -1,0 +1,72 @@
+hlsl.semantic.stage.vertexid.negative.frag
+ERROR: 0:4: 'SV_VERTEXID' : system value semantic is not a valid SPIR-V built-in for this shader stage interface the fragment shader stage cannot have it as an input
+ERROR: 1 compilation errors.  No code generated.
+
+
+Shader version: 500
+gl_FragCoord origin is upper left
+ERROR: node is still EOpNull!
+0:4  Function Definition: @main(u1; ( temp 4-component vector of float)
+0:4    Function Parameters: 
+0:4      'vertexId' ( in uint)
+0:?     Sequence
+0:5      Branch: Return with expression
+0:5        Construct vec4 ( temp 4-component vector of float)
+0:5          Convert uint to float ( temp float)
+0:5            'vertexId' ( in uint)
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            1.000000
+0:4  Function Definition: main( ( temp void)
+0:4    Function Parameters: 
+0:?     Sequence
+0:4      move second child to first child ( temp uint)
+0:?         'vertexId' ( temp uint)
+0:?         'vertexId' (layout( location=0) flat in uint)
+0:4      move second child to first child ( temp 4-component vector of float)
+0:?         '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:4        Function Call: @main(u1; ( temp 4-component vector of float)
+0:?           'vertexId' ( temp uint)
+0:?   Linker Objects
+0:?     '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:?     'vertexId' (layout( location=0) flat in uint)
+
+
+Linked fragment stage:
+
+
+Shader version: 500
+gl_FragCoord origin is upper left
+ERROR: node is still EOpNull!
+0:4  Function Definition: @main(u1; ( temp 4-component vector of float)
+0:4    Function Parameters: 
+0:4      'vertexId' ( in uint)
+0:?     Sequence
+0:5      Branch: Return with expression
+0:5        Construct vec4 ( temp 4-component vector of float)
+0:5          Convert uint to float ( temp float)
+0:5            'vertexId' ( in uint)
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            1.000000
+0:4  Function Definition: main( ( temp void)
+0:4    Function Parameters: 
+0:?     Sequence
+0:4      move second child to first child ( temp uint)
+0:?         'vertexId' ( temp uint)
+0:?         'vertexId' (layout( location=0) flat in uint)
+0:4      move second child to first child ( temp 4-component vector of float)
+0:?         '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:4        Function Call: @main(u1; ( temp 4-component vector of float)
+0:?           'vertexId' ( temp uint)
+0:?   Linker Objects
+0:?     '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:?     'vertexId' (layout( location=0) flat in uint)
+
+SPIR-V is not generated for failed compile or link

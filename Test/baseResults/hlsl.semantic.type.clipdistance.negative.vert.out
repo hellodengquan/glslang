@@ -1,0 +1,114 @@
+hlsl.semantic.type.clipdistance.negative.vert
+ERROR: 0:6: 'SV_CLIPDISTANCE' : system value semantic has an incompatible type requires a float scalar, vector, or an array of float, but got 'layout( location=0) temp int ClipDistance'
+ERROR: 1 compilation errors.  No code generated.
+
+
+Shader version: 500
+ERROR: node is still EOpNull!
+0:10  Function Definition: @main( ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10    Function Parameters: 
+0:?     Sequence
+0:12      move second child to first child ( temp 4-component vector of float)
+0:12        pos: direct index for structure ( temp 4-component vector of float)
+0:12          'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:12          Constant:
+0:12            0 (const int)
+0:12        Constant:
+0:12          0.000000
+0:12          0.000000
+0:12          0.000000
+0:12          1.000000
+0:13      move second child to first child ( temp int)
+0:13        clip: direct index for structure ( temp int)
+0:13          'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:13          Constant:
+0:13            1 (const int)
+0:13        Constant:
+0:13          1 (const int)
+0:14      Branch: Return with expression
+0:14        'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10  Function Definition: main( ( temp void)
+0:10    Function Parameters: 
+0:?     Sequence
+0:10      Sequence
+0:10        move second child to first child ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10          'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10          Function Call: @main( ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10        move second child to first child ( temp 4-component vector of float)
+0:?           '@entryPointOutput.pos' ( out 4-component vector of float Position)
+0:10          pos: direct index for structure ( temp 4-component vector of float)
+0:10            'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10            Constant:
+0:10              0 (const int)
+0:?         Sequence
+0:10          move second child to first child ( temp float)
+0:10            direct index ( out float ClipDistance)
+0:?               '@entryPointOutput.clip' ( out 1-element array of float ClipDistance)
+0:10              Constant:
+0:10                0 (const int)
+0:10            Convert int to float ( temp float)
+0:10              clip: direct index for structure ( temp int)
+0:10                'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10                Constant:
+0:10                  1 (const int)
+0:?   Linker Objects
+0:?     '@entryPointOutput.pos' ( out 4-component vector of float Position)
+0:?     '@entryPointOutput.clip' ( out 1-element array of float ClipDistance)
+
+
+Linked vertex stage:
+
+
+Shader version: 500
+ERROR: node is still EOpNull!
+0:10  Function Definition: @main( ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10    Function Parameters: 
+0:?     Sequence
+0:12      move second child to first child ( temp 4-component vector of float)
+0:12        pos: direct index for structure ( temp 4-component vector of float)
+0:12          'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:12          Constant:
+0:12            0 (const int)
+0:12        Constant:
+0:12          0.000000
+0:12          0.000000
+0:12          0.000000
+0:12          1.000000
+0:13      move second child to first child ( temp int)
+0:13        clip: direct index for structure ( temp int)
+0:13          'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:13          Constant:
+0:13            1 (const int)
+0:13        Constant:
+0:13          1 (const int)
+0:14      Branch: Return with expression
+0:14        'outp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10  Function Definition: main( ( temp void)
+0:10    Function Parameters: 
+0:?     Sequence
+0:10      Sequence
+0:10        move second child to first child ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10          'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10          Function Call: @main( ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10        move second child to first child ( temp 4-component vector of float)
+0:?           '@entryPointOutput.pos' ( out 4-component vector of float Position)
+0:10          pos: direct index for structure ( temp 4-component vector of float)
+0:10            'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10            Constant:
+0:10              0 (const int)
+0:?         Sequence
+0:10          move second child to first child ( temp float)
+0:10            direct index ( out float ClipDistance)
+0:?               '@entryPointOutput.clip' ( out 1-element array of float ClipDistance)
+0:10              Constant:
+0:10                0 (const int)
+0:10            Convert int to float ( temp float)
+0:10              clip: direct index for structure ( temp int)
+0:10                'flattenTemp' ( temp structure{ temp 4-component vector of float pos,  temp int clip})
+0:10                Constant:
+0:10                  1 (const int)
+0:?   Linker Objects
+0:?     '@entryPointOutput.pos' ( out 4-component vector of float Position)
+0:?     '@entryPointOutput.clip' ( out 1-element array of float ClipDistance)
+
+SPIR-V is not generated for failed compile or link

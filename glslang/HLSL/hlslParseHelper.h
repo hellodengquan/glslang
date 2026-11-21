@@ -85,7 +85,8 @@ public:
     void handleEntryPointAttributes(const TSourceLoc&, const TAttributes&);
     void transferTypeAttributes(const TSourceLoc&, const TAttributes&, TType&, bool allowEntry = false);
     void handleFunctionBody(const TSourceLoc&, TFunction&, TIntermNode* functionBody, TIntermNode*& node);
-    void remapEntryPointIO(TFunction& function, TVariable*& returnValue, TVector<TVariable*>& inputs, TVector<TVariable*>& outputs);
+    void remapEntryPointIO(TFunction& function, TVariable*& returnValue, TVector<TVariable*>& inputs,
+                           TVector<TVariable*>& outputs, const TSourceLoc& loc);
     void remapNonEntryPointIO(TFunction& function);
     TIntermNode* handleDeclare(const TSourceLoc&, TIntermTyped*);
     TIntermNode* handleReturnValue(const TSourceLoc&, TIntermTyped*);
@@ -291,10 +292,27 @@ protected:
     void clearUniform(TQualifier& qualifier);
     bool isInputBuiltIn(const TQualifier& qualifier) const;
     bool hasInput(const TQualifier& qualifier) const;
-    void correctOutput(TQualifier& qualifier);
+    void correctOutput(TQualifier& qualifier, const TSourceLoc& loc);
     bool isOutputBuiltIn(const TQualifier& qualifier) const;
     bool hasOutput(const TQualifier& qualifier) const;
-    void correctInput(TQualifier& qualifier);
+    void correctInput(TQualifier& qualifier, const TSourceLoc& loc);
+    // Validate that the system value carried by 'qualifier' is a legal SPIR-V
+    // built-in for an input (or output, when forInput is false) of the current
+    // shader stage.  Emits a deterministic diagnostic and clears the built-in
+    // when the stage does not permit it, instead of silently degrading it to a
+    // plain location-based varying.
+    void validateBuiltInStage(const TSourceLoc&, TQualifier& qualifier, bool forInput);
+    // Validate that the type of an entry-point IO variable matches the type
+    // required by its HLSL system-value semantic (e.g. bool for SV_IsFrontFace,
+    // integer scalar for SV_VertexID, float scalar/vector/array for
+    // SV_ClipDistance), preserving array element and interpolation information.
+    void validateBuiltInType(const TSourceLoc&, const TType&);
+    // Recursively type-check every system-value member of an aggregate
+    // entry-point IO variable, descending through arrays and nested structures.
+    // Stage placement of struct members is handled by direction filtering in
+    // correctInput()/correctOutput(); only members that keep a SPIR-V built-in
+    // are type-validated here.
+    void validateBuiltInIoMembers(const TSourceLoc&, const TType&, bool forInput);
     void correctUniform(TQualifier& qualifier);
     void clearUniformInputOutput(TQualifier& qualifier);
 
@@ -504,6 +522,11 @@ protected:
 
     TMap<long long, tShadowTextureSymbols*> textureShadowVariant;
     bool parsingEntrypointParameters;
+    // True while declareStruct() is synthesizing the cached input/output IO
+    // copies of a structure.  The actual direction a member is used in is not
+    // known yet, so stage/type validation is deferred until the structure is
+    // instantiated as a real entry-point interface.
+    bool buildingStructIoAlias;
 };
 
 // This is the prefix we use for built-in methods to avoid namespace collisions with

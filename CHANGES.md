@@ -11,6 +11,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * Add support for GL_EXT_clip_cull_distance and GL_ARB_cull_distance
 * Fix extension checks on the remaining members of a redeclared instance-named block
 * Fix an out-of-range block member index when a feature is used under `#extension all : warn`
+* Reject HLSL system-value semantics placed on an entry-point interface where the
+  corresponding SPIR-V built-in is not allowed (e.g. `SV_IsFrontFace` as a vertex input,
+  `SV_VertexID` as a fragment/geometry input, `SV_ClipDistance` as a fragment output), and
+  reject an entry-point built-in whose declared type is incompatible (e.g. a float
+  `SV_IsFrontFace`, an int `SV_ClipDistance`), with a deterministic diagnostic and no module
+  emitted. Struct members keep the existing direction-based filtering, while surviving
+  built-ins retain their array element and interpolation type information.
 
 ## 16.6.0 2026-09-10
 

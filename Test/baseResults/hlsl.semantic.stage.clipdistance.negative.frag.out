@@ -1,0 +1,163 @@
+hlsl.semantic.stage.clipdistance.negative.frag
+Shader version: 500
+gl_FragCoord origin is upper left
+0:? Sequence
+0:9  Function Definition: @main( ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9    Function Parameters: 
+0:?     Sequence
+0:11      move second child to first child ( temp 4-component vector of float)
+0:11        color: direct index for structure ( temp 4-component vector of float)
+0:11          'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:11          Constant:
+0:11            0 (const int)
+0:11        Constant:
+0:11          1.000000
+0:11          1.000000
+0:11          1.000000
+0:11          1.000000
+0:12      move second child to first child ( temp float)
+0:12        clip: direct index for structure ( temp float)
+0:12          'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:12          Constant:
+0:12            1 (const int)
+0:12        Constant:
+0:12          1.000000
+0:13      Branch: Return with expression
+0:13        'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9  Function Definition: main( ( temp void)
+0:9    Function Parameters: 
+0:?     Sequence
+0:9      Sequence
+0:9        move second child to first child ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9          'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9          Function Call: @main( ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9        move second child to first child ( temp 4-component vector of float)
+0:?           '@entryPointOutput.color' (layout( location=0) out 4-component vector of float)
+0:9          color: direct index for structure ( temp 4-component vector of float)
+0:9            'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9            Constant:
+0:9              0 (const int)
+0:9        move second child to first child ( temp float)
+0:?           '@entryPointOutput.clip' (layout( location=0) out float)
+0:9          clip: direct index for structure ( temp float)
+0:9            'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9            Constant:
+0:9              1 (const int)
+0:?   Linker Objects
+0:?     '@entryPointOutput.color' (layout( location=0) out 4-component vector of float)
+0:?     '@entryPointOutput.clip' (layout( location=0) out float)
+
+
+Linked fragment stage:
+
+
+Shader version: 500
+gl_FragCoord origin is upper left
+0:? Sequence
+0:9  Function Definition: @main( ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9    Function Parameters: 
+0:?     Sequence
+0:11      move second child to first child ( temp 4-component vector of float)
+0:11        color: direct index for structure ( temp 4-component vector of float)
+0:11          'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:11          Constant:
+0:11            0 (const int)
+0:11        Constant:
+0:11          1.000000
+0:11          1.000000
+0:11          1.000000
+0:11          1.000000
+0:12      move second child to first child ( temp float)
+0:12        clip: direct index for structure ( temp float)
+0:12          'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:12          Constant:
+0:12            1 (const int)
+0:12        Constant:
+0:12          1.000000
+0:13      Branch: Return with expression
+0:13        'outp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9  Function Definition: main( ( temp void)
+0:9    Function Parameters: 
+0:?     Sequence
+0:9      Sequence
+0:9        move second child to first child ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9          'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9          Function Call: @main( ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9        move second child to first child ( temp 4-component vector of float)
+0:?           '@entryPointOutput.color' (layout( location=0) out 4-component vector of float)
+0:9          color: direct index for structure ( temp 4-component vector of float)
+0:9            'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9            Constant:
+0:9              0 (const int)
+0:9        move second child to first child ( temp float)
+0:?           '@entryPointOutput.clip' (layout( location=0) out float)
+0:9          clip: direct index for structure ( temp float)
+0:9            'flattenTemp' ( temp structure{ temp 4-component vector of float color,  temp float clip})
+0:9            Constant:
+0:9              1 (const int)
+0:?   Linker Objects
+0:?     '@entryPointOutput.color' (layout( location=0) out 4-component vector of float)
+0:?     '@entryPointOutput.clip' (layout( location=0) out float)
+
+// Module Version 10000
+// Generated by (magic number): 8000b
+// Id's are bound by 36
+
+                              Capability Shader
+               1:             ExtInstImport  "GLSL.std.450"
+                              MemoryModel Logical GLSL450
+                              EntryPoint Fragment 4  "main" 29 33
+                              ExecutionMode 4 OriginUpperLeft
+                              Source HLSL 500
+                              Name 4  "main"
+                              Name 8  "PSOut"
+                              MemberName 8(PSOut) 0  "color"
+                              MemberName 8(PSOut) 1  "clip"
+                              Name 10  "@main("
+                              Name 13  "outp"
+                              Name 26  "flattenTemp"
+                              Name 29  "@entryPointOutput.color"
+                              Name 33  "@entryPointOutput.clip"
+                              Decorate 29(@entryPointOutput.color) Location 0
+                              Decorate 33(@entryPointOutput.clip) Location 0
+               2:             TypeVoid
+               3:             TypeFunction 2
+               6:             TypeFloat 32
+               7:             TypeVector 6(float) 4
+        8(PSOut):             TypeStruct 7(fvec4) 6(float)
+               9:             TypeFunction 8(PSOut)
+              12:             TypePointer Function 8(PSOut)
+              14:             TypeInt 32 1
+              15:     14(int) Constant 0
+              16:    6(float) Constant 1065353216
+              17:    7(fvec4) ConstantComposite 16 16 16 16
+              18:             TypePointer Function 7(fvec4)
+              20:     14(int) Constant 1
+              21:             TypePointer Function 6(float)
+              28:             TypePointer Output 7(fvec4)
+29(@entryPointOutput.color):     28(ptr) Variable Output
+              32:             TypePointer Output 6(float)
+33(@entryPointOutput.clip):     32(ptr) Variable Output
+         4(main):           2 Function None 3
+               5:             Label
+ 26(flattenTemp):     12(ptr) Variable Function
+              27:    8(PSOut) FunctionCall 10(@main()
+                              Store 26(flattenTemp) 27
+              30:     18(ptr) AccessChain 26(flattenTemp) 15
+              31:    7(fvec4) Load 30
+                              Store 29(@entryPointOutput.color) 31
+              34:     21(ptr) AccessChain 26(flattenTemp) 20
+              35:    6(float) Load 34
+                              Store 33(@entryPointOutput.clip) 35
+                              Return
+                              FunctionEnd
+      10(@main():    8(PSOut) Function None 9
+              11:             Label
+        13(outp):     12(ptr) Variable Function
+              19:     18(ptr) AccessChain 13(outp) 15
+                              Store 19 17
+              22:     21(ptr) AccessChain 13(outp) 20
+                              Store 22 16
+              23:    8(PSOut) Load 13(outp)
+                              ReturnValue 23
+                              FunctionEnd

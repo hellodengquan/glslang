@@ -78,7 +78,8 @@ HlslParseContext::HlslParseContext(TSymbolTable& symbolTable, TIntermediate& int
     cullDistanceOutput(nullptr),
     clipDistanceInput(nullptr),
     cullDistanceInput(nullptr),
-    parsingEntrypointParameters(false)
+    parsingEntrypointParameters(false),
+    buildingStructIoAlias(false)
 {
     globalUniformDefaults.clear();
     globalUniformDefaults.layoutMatrix = ElmRowMajor;
@@ -2124,7 +2125,7 @@ TIntermNode* HlslParseContext::transformEntryPoint(const TSourceLoc& loc, TFunct
     TVariable* entryPointOutput; // gets created in remapEntryPointIO
     TVector<TVariable*> inputs;
     TVector<TVariable*> outputs;
-    remapEntryPointIO(userFunction, entryPointOutput, inputs, outputs);
+    remapEntryPointIO(userFunction, entryPointOutput, inputs, outputs, loc);
 
     // Further this return/in/out transform by flattening, splitting, and assigning locations
     const auto makeVariableInOut = [&](TVariable& variable) {
@@ -2339,7 +2340,7 @@ void HlslParseContext::handleFunctionBody(const TSourceLoc& loc, TFunction& func
 // storage class.  An HLSL entry point has a return value, input parameters
 // and output parameters.  These need to get remapped to the AST I/O.
 void HlslParseContext::remapEntryPointIO(TFunction& function, TVariable*& returnValue,
-    TVector<TVariable*>& inputs, TVector<TVariable*>& outputs)
+    TVector<TVariable*>& inputs, TVector<TVariable*>& outputs, const TSourceLoc& loc)
 {
     // We might have in input structure type with no decorations that caused it
     // to look like an input type, yet it has (e.g.) interpolation types that
@@ -2394,7 +2395,7 @@ void HlslParseContext::remapEntryPointIO(TFunction& function, TVariable*& return
 
     // Do the actual work to make a type be a shader input or output variable,
     // and clear the original to be non-IO (for use as a normal function parameter/return).
-    const auto makeIoVariable = [this](const char* name, TType& type, TStorageQualifier storage) -> TVariable* {
+    const auto makeIoVariable = [this, &loc](const char* name, TType& type, TStorageQualifier storage) -> TVariable* {
         TVariable* ioVariable = makeInternalVariable(name, type);
         clearUniformInputOutput(type.getQualifier());
         if (type.isStruct()) {
@@ -2407,16 +2408,22 @@ void HlslParseContext::remapEntryPointIO(TFunction& function, TVariable*& return
             }
         }
         if (storage == EvqVaryingIn) {
-            correctInput(ioVariable->getWritableType().getQualifier());
+            correctInput(ioVariable->getWritableType().getQualifier(), loc);
             if (language == EShLangTessEvaluation)
                 if (!ioVariable->getType().isArray())
                     ioVariable->getWritableType().getQualifier().patch = true;
         } else {
-            correctOutput(ioVariable->getWritableType().getQualifier());
+            correctOutput(ioVariable->getWritableType().getQualifier(), loc);
         }
         ioVariable->getWritableType().getQualifier().storage = storage;
 
         fixBuiltInIoType(ioVariable->getWritableType());
+        validateBuiltInType(loc, ioVariable->getType());
+        // Scalar/vector roots were already stage-validated by correctInput()/
+        // correctOutput() above; only aggregate variables carry members whose
+        // direction has just become known and need recursive validation.
+        if (ioVariable->getType().isStruct() || ioVariable->getType().isArray())
+            validateBuiltInIoMembers(loc, ioVariable->getType(), storage == EvqVaryingIn);
 
         return ioVariable;
     };
@@ -7983,6 +7990,11 @@ void HlslParseContext::declareStruct(const TSourceLoc& loc, TString& structName,
 
     // We have IO involved.
 
+    // These IO lists are speculative: a structure can be instantiated later as
+    // either an entry-point input or output, so member stage/type validation is
+    // deferred until the real interface direction is known.
+    buildingStructIoAlias = true;
+
     // Make a pure typeList for the symbol table, and cache side copies of IO versions.
     for (auto member = type.getStruct()->begin(); member != type.getStruct()->end(); ++member) {
         const auto inheritStruct = [&](TTypeList* s, TTypeLoc& ioMember) {
@@ -8023,18 +8035,23 @@ void HlslParseContext::declareStruct(const TSourceLoc& loc, TString& structName,
         }
         if (newLists.input) {
             newMember(newInputMember);
-            correctInput(newInputMember.type->getQualifier());
+            correctInput(newInputMember.type->getQualifier(), newInputMember.loc);
+            if (!buildingStructIoAlias)
+                validateBuiltInType(newInputMember.loc, *newInputMember.type);
             newLists.input->push_back(newInputMember);
         }
         if (newLists.output) {
             newMember(newOutputMember);
-            correctOutput(newOutputMember.type->getQualifier());
+            correctOutput(newOutputMember.type->getQualifier(), newOutputMember.loc);
+            if (!buildingStructIoAlias)
+                validateBuiltInType(newOutputMember.loc, *newOutputMember.type);
             newLists.output->push_back(newOutputMember);
         }
 
         // make original pure
         clearUniformInputOutput(member->type->getQualifier());
     }
+    buildingStructIoAlias = false;
     ioTypeMap[type.getStruct()] = newLists;
 }
 
@@ -8881,10 +8898,10 @@ void HlslParseContext::declareBlock(const TSourceLoc& loc, TType& type, const TS
         correctUniform(type.getQualifier());
         break;
     case EvqVaryingIn:
-        correctInput(type.getQualifier());
+        correctInput(type.getQualifier(), loc);
         break;
     case EvqVaryingOut:
-        correctOutput(type.getQualifier());
+        correctOutput(type.getQualifier(), loc);
         break;
     default:
         break;
@@ -8910,12 +8927,12 @@ void HlslParseContext::declareBlock(const TSourceLoc& loc, TType& type, const TS
                     memberType.setStruct(it->second.uniform);
                 break;
             case EvqVaryingIn:
-                correctInput(type.getQualifier());
+                correctInput(type.getQualifier(), memberLoc);
                 if (it != ioTypeMap.end() && it->second.input)
                     memberType.setStruct(it->second.input);
                 break;
             case EvqVaryingOut:
-                correctOutput(type.getQualifier());
+                correctOutput(type.getQualifier(), memberLoc);
                 if (it != ioTypeMap.end() && it->second.output)
                     memberType.setStruct(it->second.output);
                 break;
@@ -9715,7 +9732,7 @@ bool HlslParseContext::hasOutput(const TQualifier& qualifier) const
 }
 
 // Make the IO decorations etc. be appropriate only for an input interface.
-void HlslParseContext::correctInput(TQualifier& qualifier)
+void HlslParseContext::correctInput(TQualifier& qualifier, const TSourceLoc& loc)
 {
     clearUniform(qualifier);
     if (language == EShLangVertex)
@@ -9730,12 +9747,19 @@ void HlslParseContext::correctInput(TQualifier& qualifier)
     qualifier.clearStreamLayout();
     qualifier.clearXfbLayout();
 
+    // Emit a stage diagnostic only once the real interface direction is known.
+    // While synthesizing speculative struct IO copies (a structure may be
+    // reused for several directions) an illegal built-in is silently filtered
+    // to a location variable below, preserving the established behavior.
+    if (!buildingStructIoAlias)
+        validateBuiltInStage(loc, qualifier, true);
+
     if (! isInputBuiltIn(qualifier))
         qualifier.builtIn = EbvNone;
 }
 
 // Make the IO decorations etc. be appropriate only for an output interface.
-void HlslParseContext::correctOutput(TQualifier& qualifier)
+void HlslParseContext::correctOutput(TQualifier& qualifier, const TSourceLoc& loc)
 {
     clearUniform(qualifier);
     if (language == EShLangFragment)
@@ -9770,8 +9794,224 @@ void HlslParseContext::correctOutput(TQualifier& qualifier)
         break;
     }
 
+    // Emit a stage diagnostic only once the real interface direction is known.
+    // While synthesizing speculative struct IO copies (a structure may be
+    // reused for several directions) an illegal built-in is silently filtered
+    // to a location variable below, preserving the established behavior.
+    if (!buildingStructIoAlias)
+        validateBuiltInStage(loc, qualifier, false);
+
     if (! isOutputBuiltIn(qualifier))
         qualifier.builtIn = EbvNone;
+}
+
+// Human-readable name of the current shader stage, for diagnostics.
+static const char* shaderStageName(EShLanguage stage)
+{
+    switch (stage) {
+    case EShLangVertex:         return "vertex";
+    case EShLangTessControl:    return "tessellation control";
+    case EShLangTessEvaluation: return "tessellation evaluation";
+    case EShLangGeometry:       return "geometry";
+    case EShLangFragment:       return "fragment";
+    case EShLangCompute:        return "compute";
+    case EShLangTask:           return "task";
+    case EShLangMesh:           return "mesh";
+    case EShLangRayGen:         return "ray generation";
+    case EShLangIntersect:      return "intersection";
+    case EShLangAnyHit:         return "any-hit";
+    case EShLangClosestHit:     return "closest-hit";
+    case EShLangMiss:           return "miss";
+    case EShLangCallable:       return "callable";
+    default:                    return "unknown";
+    }
+}
+
+// Validate that a system-value semantic maps to a SPIR-V built-in that is
+// permitted on an input (forInput) or output interface of the current shader
+// stage.  A semantic placed on the wrong kind of interface is an error rather
+// than being silently degraded to a plain, location-based varying, which would
+// leave an unusable partial module behind.
+void HlslParseContext::validateBuiltInStage(const TSourceLoc& loc, TQualifier& qualifier, bool forInput)
+{
+    if (qualifier.builtIn == EbvNone)
+        return;
+
+    // Pseudo built-ins naming HLSL-only stage interface objects (geometry
+    // streams, tessellation patches).  They never become SPIR-V built-ins, so
+    // they are not subject to stage built-in validation.
+    if (qualifier.builtIn == EbvGsOutputStream ||
+        qualifier.builtIn == EbvOutputPatch ||
+        qualifier.builtIn == EbvInputPatch)
+        return;
+
+    // SV_Position consumed as a vertex-shader input is a legal HLSL vertex
+    // attribute (it does not name the SPIR-V Position built-in here; it is
+    // lowered to a location-based input), so it must not be rejected.
+    if (forInput && language == EShLangVertex && qualifier.builtIn == EbvPosition)
+        return;
+
+    const bool legal = forInput ? isInputBuiltIn(qualifier) : isOutputBuiltIn(qualifier);
+    if (legal)
+        return;
+
+    const char* semantic = qualifier.semanticName != nullptr ? qualifier.semanticName : "system value";
+    error(loc, "system value semantic is not a valid SPIR-V built-in for this shader stage interface",
+          semantic, "the %s shader stage cannot have it as an %s", shaderStageName(language),
+          forInput ? "input" : "output");
+    // Drop the built-in so no illegal decoration can reach SPIR-V.  The parse
+    // error already guarantees that no module is emitted.
+    qualifier.builtIn = EbvNone;
+    qualifier.declaredBuiltIn = EbvNone;
+}
+
+// Validate that the declared type of an entry-point IO variable matches the
+// type required by its HLSL system-value semantic, so that the generated
+// SPIR-V built-in keeps a legal type, including the array element type and
+// vector width (and the interpolation qualifiers preserved elsewhere).
+void HlslParseContext::validateBuiltInType(const TSourceLoc& loc, const TType& type)
+{
+    const TBuiltInVariable builtIn = type.getQualifier().builtIn;
+    if (builtIn == EbvNone)
+        return;
+
+    // HLSL-only interface objects are not backed by SPIR-V built-ins.
+    if (builtIn == EbvGsOutputStream || builtIn == EbvOutputPatch || builtIn == EbvInputPatch)
+        return;
+
+    // A built-in without an HLSL semantic name was introduced through the
+    // [[vk::builtin(...)]] SPIR-V escape hatch, which is allowed to name a
+    // SPIR-V built-in directly (e.g. PointSize on an array), so it is not
+    // subject to HLSL semantic type contracts.
+    if (type.getQualifier().semanticName == nullptr)
+        return;
+
+    const char* semantic = type.getQualifier().semanticName != nullptr ? type.getQualifier().semanticName
+                                                                       : "system value";
+    const auto typeError = [&](const char* expected) {
+        error(loc, "system value semantic has an incompatible type", semantic,
+              "requires %s, but got '%s'", expected, type.getCompleteString().c_str());
+    };
+
+    switch (builtIn) {
+    // Boolean scalar built-ins.
+    case EbvFace:
+    case EbvHelperInvocation:
+        if (!type.isScalar() || type.getBasicType() != EbtBool)
+            typeError("a scalar bool");
+        break;
+
+    // Integer scalar built-ins.
+    case EbvVertexId:
+    case EbvVertexIndex:
+    case EbvInstanceId:
+    case EbvInstanceIndex:
+    case EbvPrimitiveId:
+    case EbvInvocationId:
+    case EbvSampleId:
+    case EbvLocalInvocationIndex:
+    case EbvBaseVertex:
+    case EbvBaseInstance:
+    case EbvDrawId:
+        if (!type.isScalar() ||
+            (type.getBasicType() != EbtInt && type.getBasicType() != EbtUint))
+            typeError("a scalar int or uint");
+        break;
+
+    // Integer vector built-ins.
+    case EbvWorkGroupId:
+    case EbvGlobalInvocationId:
+    case EbvLocalInvocationId:
+        if (!type.isVector() ||
+            (type.getBasicType() != EbtInt && type.getBasicType() != EbtUint))
+            typeError("an int or uint vector");
+        break;
+
+    // Float scalar built-ins.
+    case EbvPointSize:
+    case EbvFragDepth:
+    case EbvFragDepthGreater:
+    case EbvFragDepthLesser:
+        if (!type.isScalar() || type.getBasicType() != EbtFloat)
+            typeError("a scalar float");
+        break;
+
+    // Position may be a scalar or a float vector in HLSL.
+    case EbvPosition:
+        if ((!type.isScalar() && !type.isVector()) || type.getBasicType() != EbtFloat)
+            typeError("a float scalar or vector");
+        break;
+
+    // Float vector built-ins.
+    case EbvFragCoord:
+    case EbvPointCoord:
+    case EbvSamplePosition:
+    case EbvTessCoord:
+        if (!type.isVector() || type.getBasicType() != EbtFloat)
+            typeError("a float vector");
+        break;
+
+    // Clip/cull distances are SPIR-V arrays of float; HLSL expresses them as
+    // float scalars, vectors, or (possibly nested) arrays thereof.  Keep the
+    // declared element/vector information, but reject any non-float element.
+    case EbvClipDistance:
+    case EbvCullDistance: {
+        const TType* elementType = &type;
+        while (elementType->isArray())
+            elementType = new TType(*elementType, 0);
+        if ((!elementType->isScalar() && !elementType->isVector()) ||
+            elementType->getBasicType() != EbtFloat)
+            typeError("a float scalar, vector, or an array of float");
+        break;
+    }
+
+    // Integer array built-ins, e.g. SampleMask is an array of uint.
+    case EbvSampleMask:
+        if (type.getBasicType() != EbtInt && type.getBasicType() != EbtUint)
+            typeError("an int or uint scalar or an array of int or uint");
+        break;
+
+    // Integer scalar or vector built-ins.
+    case EbvViewportIndex:
+    case EbvLayer:
+        if (!(type.isScalar() || type.isVector()) ||
+            (type.getBasicType() != EbtInt && type.getBasicType() != EbtUint))
+            typeError("an int or uint scalar or vector");
+        break;
+
+    default:
+        // Semantics without an explicit contract keep their declared type.
+        break;
+    }
+}
+
+// Recursively validate the system-value members of an entry-point IO variable.
+// Structure members whose built-in is not legal for the current interface
+// direction have already been direction-filtered to plain location variables
+// by correctInput()/correctOutput() (a structure may be reused for several
+// directions, so the built-in cannot be rejected there).  The members that
+// keep a SPIR-V built-in are still type-checked, descending through arrays and
+// nested structures, so a wrong element type (e.g. an int SV_ClipDistance or a
+// float SV_IsFrontFace) is diagnosed deterministically.
+void HlslParseContext::validateBuiltInIoMembers(const TSourceLoc& loc, const TType& type, bool forInput)
+{
+    // Peel off array dimensions, keeping the element's qualifier information.
+    if (type.isArray()) {
+        const TType elementType(type, 0);
+        validateBuiltInIoMembers(loc, elementType, forInput);
+        return;
+    }
+
+    if (type.isStruct()) {
+        for (auto member = type.getStruct()->begin(); member != type.getStruct()->end(); ++member)
+            validateBuiltInIoMembers(member->loc, *member->type, forInput);
+        return;
+    }
+
+    // Only members that survived direction filtering (and therefore really
+    // become SPIR-V built-ins) are type-validated here.
+    if (type.getQualifier().builtIn != EbvNone)
+        validateBuiltInType(loc, type);
 }
 
 // Make the IO decorations etc. be appropriate only for uniform type interfaces.

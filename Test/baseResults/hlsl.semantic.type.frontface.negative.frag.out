@@ -1,0 +1,70 @@
+hlsl.semantic.type.frontface.negative.frag
+ERROR: 0:4: 'SV_ISFRONTFACE' : system value semantic has an incompatible type requires a scalar bool, but got ' in float Face'
+ERROR: 1 compilation errors.  No code generated.
+
+
+Shader version: 500
+gl_FragCoord origin is upper left
+ERROR: node is still EOpNull!
+0:4  Function Definition: @main(f1; ( temp 4-component vector of float)
+0:4    Function Parameters: 
+0:4      'isFrontFace' ( in float)
+0:?     Sequence
+0:5      Branch: Return with expression
+0:5        Construct vec4 ( temp 4-component vector of float)
+0:5          'isFrontFace' ( in float)
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            1.000000
+0:4  Function Definition: main( ( temp void)
+0:4    Function Parameters: 
+0:?     Sequence
+0:4      move second child to first child ( temp float)
+0:?         'isFrontFace' ( temp float)
+0:?         'isFrontFace' ( in float Face)
+0:4      move second child to first child ( temp 4-component vector of float)
+0:?         '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:4        Function Call: @main(f1; ( temp 4-component vector of float)
+0:?           'isFrontFace' ( temp float)
+0:?   Linker Objects
+0:?     '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:?     'isFrontFace' ( in float Face)
+
+
+Linked fragment stage:
+
+
+Shader version: 500
+gl_FragCoord origin is upper left
+ERROR: node is still EOpNull!
+0:4  Function Definition: @main(f1; ( temp 4-component vector of float)
+0:4    Function Parameters: 
+0:4      'isFrontFace' ( in float)
+0:?     Sequence
+0:5      Branch: Return with expression
+0:5        Construct vec4 ( temp 4-component vector of float)
+0:5          'isFrontFace' ( in float)
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            0.000000
+0:5          Constant:
+0:5            1.000000
+0:4  Function Definition: main( ( temp void)
+0:4    Function Parameters: 
+0:?     Sequence
+0:4      move second child to first child ( temp float)
+0:?         'isFrontFace' ( temp float)
+0:?         'isFrontFace' ( in float Face)
+0:4      move second child to first child ( temp 4-component vector of float)
+0:?         '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:4        Function Call: @main(f1; ( temp 4-component vector of float)
+0:?           'isFrontFace' ( temp float)
+0:?   Linker Objects
+0:?     '@entryPointOutput' (layout( location=0) out 4-component vector of float)
+0:?     'isFrontFace' ( in float Face)
+
+SPIR-V is not generated for failed compile or link
