@@ -1493,14 +1493,23 @@ struct TDefaultHlslIoResolver : public TDefaultIoResolverBase {
         const TType& type = ent.symbol->getType();
         const int set = getLayoutSet(type);
         TResourceType resource = getResourceType(type);
-        int resourceKey = referenceIntermediate.getBindingsPerResourceType() ? resource : 0;
+        // don't need to handle uniform symbol, it will be handled in resolveUniformLocation
+        if (resource == EResUbo && type.getBasicType() != EbtBlock)
+            return ent.newBinding = -1;
+        // HLSL register classes (t/s/u/b) form independent binding spaces, so slots are
+        // tracked per resource class; mixed declarations of different classes must not
+        // share (and thereby overwrite) each other's allocation state. Each element of a
+        // resource array occupies one consecutive register within its class, so reserve
+        // the whole array span to keep explicit registers and auto-assigned bindings from
+        // colliding with other declarations.
+        const int numBindings = type.isSizedArray() ? type.getCumulativeArraySize() : 1;
         if (resource < EResCount) {
             if (type.getQualifier().hasBinding()) {
-                return ent.newBinding = reserveSlot(resourceKey, set, getBaseBinding(stage, resource, set) + type.getQualifier().layoutBinding);
+                return ent.newBinding = reserveSlot(resource, set, getBaseBinding(stage, resource, set) + type.getQualifier().layoutBinding, numBindings);
             } else if (ent.live && doAutoBindingMapping()) {
                 // find free slot, the caller did make sure it passes all vars with binding
                 // first and now all are passed that do not have a binding and needs one
-                return ent.newBinding = getFreeSlot(resourceKey, set, getBaseBinding(stage, resource, set));
+                return ent.newBinding = getFreeSlot(resource, set, getBaseBinding(stage, resource, set), numBindings);
             }
         }
         return ent.newBinding = -1;

@@ -77,6 +77,8 @@ if [ $ENABLE_HLSL -eq 1 ]; then
   diff -b $BASEDIR/hlsl.reflection.binding.frag.out "$TARGETDIR/hlsl.reflection.binding.frag.out" || HASERROR=1
   run -D -Od -e main -l -q --hlsl-iomap --auto-map-bindings --stb 10 --sbb 20 --ssb 30 --suavb 40 --scb 50 -D -V -e main -Od hlsl.automap.frag > "$TARGETDIR/hlsl.automap.frag.out"
   diff -b $BASEDIR/hlsl.automap.frag.out "$TARGETDIR/hlsl.automap.frag.out" || HASERROR=1
+  run -D -Od -e main --hlsl-iomap --auto-map-bindings -V -H hlsl.mixedResourceArray.frag > "$TARGETDIR/hlsl.mixedResourceArray.frag.out"
+  diff -b $BASEDIR/hlsl.mixedResourceArray.frag.out "$TARGETDIR/hlsl.mixedResourceArray.frag.out" || HASERROR=1
 fi
 
 #
